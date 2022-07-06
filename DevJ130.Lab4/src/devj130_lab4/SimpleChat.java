@@ -5,7 +5,6 @@
  */
 package devj130_lab4;
 
-
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.FlowLayout;
@@ -39,46 +38,45 @@ import javax.swing.text.PlainDocument;
  *
  * @author bezdetk0@mail.ru
  */
-public class SimpleChat /*extends JFrame */ implements ISimpleChat{
-    
-//    private ServerSocket serverSocket;
-//    private Socket socket;
-    
+public class SimpleChat /*extends JFrame */ implements ISimpleChat {
+
+
     private Socket socket; //сокет для общения
     private ServerSocket serverSocket; // серверсокет
     private BufferedReader reader; // поток чтения из сокета
-    private BufferedReader in; // поток чтения из сокета
-    private BufferedWriter out; // поток записи в сокет
     private JTextArea chatArea;
     private JTextField messageField;
     private JFrame frame;
     private JButton exitButton;
-    
+
     private String address;
     private int port;
     private String title;
 //    private String outputText;
 //    private String inputText;
-    
+
     private JFrame startFrame;
     private JLabel infoLabel;
-    
+
     private LaunchEnum typeOfLaunch;
-    
-    private LocalDateTime  time; 
-    
+
+    private LocalDateTime time;
+
     private PrintWriter printWriter;
-    
-    
-    public SimpleChat(){};
+
+    private boolean flag = true;
+
+    public SimpleChat() {
+    }
+
+    ;
     
     public SimpleChat(LaunchEnum typeOfLaunch) {
-        if(typeOfLaunch.equals(LaunchEnum.SERVER))
-        {
+        if (typeOfLaunch.equals(LaunchEnum.SERVER)) {
             title = "Сервер";
-        new Thread(() -> {
+            new Thread(() -> {
                 try {
-                            mainFrame();
+                    mainFrame();
                     server();
 
                 } catch (ChatException e) {
@@ -86,29 +84,26 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
                 }
             }).start();
         }
-        
-        if (typeOfLaunch.equals(LaunchEnum.CLIENT)){
-            
+
+        if (typeOfLaunch.equals(LaunchEnum.CLIENT)) {
+
             title = "Клиент";
 
-                            clientStartFrame();
+            clientStartFrame();
 
-        
+        }
 
-        }       
-        
     }
-    
 
     @Override
-    public void client() throws ChatException { 
+    public void client() throws ChatException {
 //        mainFrame();
         try {
 //                        socket = new Socket("localhost", ISimpleChat.SERVER_PORT);
             socket = new Socket(address, port);
             System.out.println("Клиент создал сокет");
             getMessage();
-            
+
         } catch (IOException ex) {
             infoLabel.setText("Неверный адрес или порт");
         }
@@ -117,7 +112,7 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
     @Override
     public void server() throws ChatException {
 //        mainFrame();
-            try {
+        try {
             serverSocket = new ServerSocket(ISimpleChat.SERVER_PORT);
             socket = serverSocket.accept();
             System.out.println("Сервер запущен");
@@ -128,32 +123,28 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
         }
     }
 
-    
     @Override
     public String getMessage() throws ChatException {
-        String msg ="";
+        String msg = "";
         try {
             InputStreamReader isr = new InputStreamReader(socket.getInputStream());
-            System.err.println("1");
             BufferedReader bufferedReader = new BufferedReader(isr);
-            System.err.println("2");
             System.out.println("Открыт входящий поток");
-            System.err.println("3");
-            if (!socket.isClosed()){
-            while (true){
-            msg = bufferedReader.readLine();
-            chatArea.append( LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + " " +
-                            LocalDateTime.now().format(DateTimeFormatter.ISO_TIME)  +
-                             " <-- " + msg + "\n");
+            while (true) {
+                if (socket.isClosed()) break;
+                msg = bufferedReader.readLine();
+                if (msg != null) {
+                    chatArea.append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + " "
+                            + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME)
+                            + " <-- " + msg + "\n");
+                }
+                
             }
-            }
-                } catch (IOException ex) {
-            Logger.getLogger(SimpleChat.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            System.err.println(ex.getMessage());;
         }
         return msg;
-    }    
-
-    
+    }
 
     @Override
     public void sendMessage(String message) throws ChatException {
@@ -161,9 +152,9 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
             printWriter = new PrintWriter(socket.getOutputStream(), true);
             printWriter.println(message);
             printWriter.flush();
-            chatArea.append( LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + " " +
-                            LocalDateTime.now().format(DateTimeFormatter.ISO_TIME)  +
-                             " --> " + message + "\n");
+            chatArea.append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + " "
+                    + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME)
+                    + " --> " + message + "\n");
             messageField.setText(null);
         } catch (IOException e) {
             throw new ChatException(e.getMessage());
@@ -178,19 +169,21 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
                 socket.getInputStream().close();
                 socket.close();
             }
-            if (serverSocket != null && !serverSocket.isClosed()) serverSocket.close();
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
         } catch (IOException e) {
             throw new ChatException(e.getMessage());
-        }    
+        }
     }
-        
-    private void mainFrame(){
+
+    private void mainFrame() {
 //        JFrame frame = new JFrame();
         frame = new JFrame();
         frame.setTitle(title);
         frame.setSize(900, 600);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        
+
         frame.getContentPane().setLayout(new BorderLayout());
         chatArea = new JTextArea();
         chatArea.setEditable(false);
@@ -200,19 +193,21 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
         south.setLayout(new FlowLayout());
         frame.add(south, BorderLayout.SOUTH);
         messageField = new JTextField(60);
-        messageField.addKeyListener(new KeyListener(){
+        messageField.addKeyListener(new KeyListener() {
             @Override
-            public void keyTyped(KeyEvent e) {}
+            public void keyTyped(KeyEvent e) {
+            }
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if(e.getKeyCode()==KeyEvent.VK_ENTER){
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     System.out.println("Нажата кнопка Enter");
                     try {
-                        if(!messageField.getText().isEmpty() && messageField.getText() !=null)
-                        sendMessage(messageField.getText());
+                        if (!messageField.getText().isEmpty() && messageField.getText() != null) {
+                            sendMessage(messageField.getText());
+                        }
                         System.out.println("Собщение ушло на сервер");
-                        
+
                     } catch (ChatException ex) {
                         System.out.println("Ошибка#1: " + ex.getMessage());
                     }
@@ -222,37 +217,36 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
             }
 
             @Override
-            public void keyReleased(KeyEvent e) {}
+            public void keyReleased(KeyEvent e) {
+            }
         });
-        
+
         exitButton = new JButton("EXIT");
         exitButton.addActionListener((e) -> {
 
-                frame.dispose();
-                
-                
+            frame.dispose();
+            try {
+                close();
+            } catch (ChatException ex) {
+                System.out.println(ex.getMessage());
+            }
+
         });
-       
+
         south.add(messageField);
         south.add(exitButton);
-        
-        
-        
-        
+
         frame.setVisible(true);
     }
-    
 
-        private void clientStartFrame(){
+    private void clientStartFrame() {
         startFrame = new JFrame();
         Container container;
         startFrame.setTitle("Соединение");
         startFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        startFrame.setSize(500,170);
+        startFrame.setSize(500, 170);
         startFrame.setResizable(false);
 
-
-        
         JLabel titleLabel = new JLabel("Введите адрес и порт сервера");
         titleLabel.setSize(350, 15);
         infoLabel = new JLabel(" ");
@@ -263,58 +257,54 @@ public class SimpleChat /*extends JFrame */ implements ISimpleChat{
         JTextField portField = new JTextField(20);
         JButton buttonConnect = new JButton("Соединить");
         JButton buttonCancel = new JButton("Отмена");
-              
-        
+
         container = startFrame.getContentPane();
         GridLayout gridLayout = new GridLayout(2, 2, 5, 5);
         Container grid = new Container();
         grid.setLayout(new GridLayout(3, 2, 5, 5));
-      
+
         startFrame.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
         container.add(titleLabel);
         container.add(infoLabel);
         container.add(grid);
-            grid.add(addressLabel);
-            grid.add(addressField);
-            grid.add(portLabel);
-            grid.add(portField);
-            grid.add(buttonConnect);
-            grid.add(buttonCancel);
-            
+        grid.add(addressLabel);
+        grid.add(addressField);
+        grid.add(portLabel);
+        grid.add(portField);
+        grid.add(buttonConnect);
+        grid.add(buttonCancel);
+
         PlainDocument digitDoc = (PlainDocument) portField.getDocument();
         digitDoc.setDocumentFilter(new DigitFilter());
-        
+
         buttonCancel.addActionListener((e) -> {
             startFrame.dispose();
         });
-        
+
         buttonConnect.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (addressField.getText().isEmpty() || portField.getText().isEmpty()  || Integer.parseInt(portField.getText()) < 1){
-                    infoLabel.setText("Адрес и порт не могут быть пустыми. Порт должен быть > 0");                    
-                }
-                else {
-                port = Integer.parseInt(portField.getText());
-                address = addressField.getText();
-                        new Thread(() -> {
-                            try {
-                                        mainFrame();
-                                client();
-                            } catch (ChatException ex) {
-                                Logger.getLogger(SimpleChat.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                if (addressField.getText().isEmpty() || portField.getText().isEmpty() || Integer.parseInt(portField.getText()) < 1) {
+                    infoLabel.setText("Адрес и порт не могут быть пустыми. Порт должен быть > 0");
+                } else {
+                    port = Integer.parseInt(portField.getText());
+                    address = addressField.getText();
+                    new Thread(() -> {
+                        try {
+                            mainFrame();
+                            client();
+                        } catch (ChatException ex) {
+                            Logger.getLogger(SimpleChat.class.getName()).log(Level.SEVERE, null, ex);
+                        }
 
-                        }).start();
+                    }).start();
 
-                        startFrame.dispose();
+                    startFrame.dispose();
 
                 }
             }
-        });       
-    startFrame.setVisible(true);       
-}
-        
-    
-        
+        });
+        startFrame.setVisible(true);
+    }
+
 }
